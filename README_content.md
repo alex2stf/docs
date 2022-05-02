@@ -5,13 +5,10 @@ Nietzsche-->
 ## About
 
 
-###Business motivation
-What was your motivation?
-
+### Business motivation
+What was your motivation? 
 Why did you build this project?
-
 What problem does it solve?
-
 What makes your project stand out?
 
 ###Features
@@ -35,13 +32,11 @@ Leave any add-ons/plugins for the acknowledgements section. Here are a few examp
 
 
 ## Getting Started
-
 This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
 
 ### Prerequisites
-
 This is an example of how to list things you need to use the software and how to install them.
 * npm
   ```sh
@@ -55,8 +50,7 @@ This is an example of how to list things you need to use the software and how to
 * java 11
 
 
-### Installation || running locally
-
+### Installation (running remote or locally)
 _Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't rely on any external dependencies or services._
 
 1. Get a free API Key at [https://example.com](https://example.com)
@@ -75,16 +69,14 @@ _Below is an example of how you can instruct your audience on installing and set
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-## Usage (start commands)
+## Usage
 
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 
-###Startup commands (arguments) 
+### Startup commands (arguments) 
 
-###Configuration parameters
+### Configuration parameters (application.yml)
 
-
-<!-- ROADMAP -->
 ## Roadmap
 
 - [x] Add Changelog
@@ -94,8 +86,6 @@ Use this space to show useful examples of how a project can be used. Additional 
 
 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 
@@ -116,7 +106,6 @@ Don't forget to give the project a star! Thanks again!
 
 
 
-<!-- LICENSE -->
 ## License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
@@ -125,7 +114,6 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 
 
-<!-- CONTACT -->
 ## Contact
 
 Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com
@@ -136,7 +124,6 @@ Project Link: [https://github.com/your_username/repo_name](https://github.com/yo
 
 
 
-<!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
 ### Regenerate docs using https://www.npmjs.com/package/openapi-to-md
