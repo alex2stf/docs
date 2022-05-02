@@ -4,6 +4,20 @@ Nietzsche-->
 
 ## About
 
+
+###Business motivation
+What was your motivation?
+
+Why did you build this project?
+
+What problem does it solve?
+
+What makes your project stand out?
+
+###Features
+If your project has a lot of features, consider adding a "Features" section and listing them here.
+
+
 ### Built With
 
 This section should list any major frameworks/libraries used to bootstrap your project. 
@@ -16,6 +30,9 @@ Leave any add-ons/plugins for the acknowledgements section. Here are a few examp
 * [Sprig Framework](https://spring.io/)
 * [Kafka](https://kafka.apache.org/)
 * [Mongo](https://www.mongodb.com/)
+
+
+
 
 ## Getting Started
 
@@ -58,14 +75,13 @@ _Below is an example of how you can instruct your audience on installing and set
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-## Usage
+## Usage (start commands)
 
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+###Startup commands (arguments) 
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
+###Configuration parameters
 
 
 <!-- ROADMAP -->
@@ -75,9 +91,7 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 - [x] Add back to top links
 - [ ] Add Additional Templates w/ Examples
 - [ ] Add "components" document to easily copy & paste sections of the readme
-- [ ] Multi-language Support
-    - [ ] Chinese
-    - [ ] Spanish
+
 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
 
@@ -139,3 +153,6 @@ Use this space to list resources you find helpful and would like to give credit 
 * [React Icons](https://react-icons.github.io/react-icons/search)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
+
+
+What did you learn?
