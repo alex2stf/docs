@@ -1,0 +1,7 @@
+https://support.atlassian.com/bitbucket-cloud/docs/integrate-bitbucket-cloud-with-slack/
+
+pocker planning:
+https://scrum-poker.org/
+
+retro boards:
+https://miro.com/app/settings/team/3458764517521923059/users/

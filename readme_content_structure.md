@@ -77,7 +77,7 @@ Use this space to show useful examples of how a project can be used. Additional 
 
 ### Configuration parameters (application.yml)
 
-## Roadmap
+## Roadmap (project status)
 
 - [x] Add Changelog
 - [x] Add back to top links
