@@ -1,0 +1,12 @@
+GIT 
+delet local tag
+git tag -d <tag-name>
+
+delete rmeote tag
+git push --delete origin <tag-name>
+
+add local tag:
+git tag <tag-name> <branch>
+
+push local tag:
+git push origin <tag-name>
