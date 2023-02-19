@@ -1,0 +1,259 @@
+package com.xxxx.loans.integration;
+
+import com.xxxx.dal.mysql.configuration.FlywayMigrationAutoConfiguration;
+import com.xxxx.dal.mysql.configuration.MySqlMigrationAutoConfiguration;
+import com.xxxx.dal.mysql.configuration.MySqlMultiTenantAutoConfiguration;
+import com.xxxx.dal.mysql.configuration.MysqlMultiTenantMigrationAutoConfiguration;
+import com.xxxx.loans.LoanIntegration;
+import com.xxxx.loans.repository.LoanRepository;
+import com.xxxx.loans.repository.PaymentRepository;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.QueueDispatcher;
+import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultHandler;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@TestPropertySource(properties = {
+        "xxxx.serviceId=loan-management-test",
+        "spring.jpa.properties.hibernate.jdbc.batch_size=10",
+        "xxxx.configurationManager.classPath=com.xxxx.loans.setup.ConfigData",
+        "xxxx.configurationManager.server.url=http://localhost:8080",
+        "xxxx.configurationManager.mode.local.enabled=true",
+        "xxxx.configurationManager.mode.local.fallback=false",
+        "xxxx.configurationManager.mode.local.filePath=/local/configuration.json",
+        "xxxx.configurationManager.cache.timeToLive=PT1H",
+        "xxxx.configurationManager.configuration.deserialization.throwExceptionOnMissingField=${xxxx_CONFIGURATION_MANAGER_THROW_EXCEPTION_ON_MISSING_CONFIGURATION_FIELD:false}"
+})
+@EnableAutoConfiguration(exclude = {
+        MySqlMultiTenantAutoConfiguration.class,
+        MysqlMultiTenantMigrationAutoConfiguration.class,
+        MySqlMigrationAutoConfiguration.class,
+        FlywayMigrationAutoConfiguration.class})
+public class LoanApplicationIntegration extends LoanIntegration {
+
+ static {
+        String jdbcUrl = "jdbc:mysql://localhost:3306/leumi_loan_servicee_test2?serverTimezone=Europe/Athens";
+        String username = "root";
+        String password = "root";
+        //usage for local mysql instances, to run tests faster
+        if (!"local".equalsIgnoreCase(System.getProperty("test-mode"))){
+            final MySQLContainer<?> mysql;
+            DockerImageName dockerImage =
+                    DockerImageName.parse(System.getProperty("DOCKER_TESTCONTAINERS_MYSQL_IMAGE"))
+                            .asCompatibleSubstituteFor("mysql");
+
+            mysql = new MySQLContainer<>(dockerImage);
+            mysql.withUrlParam("serverTimezone", ZoneId.systemDefault().getId());
+            mysql.withEnv("TZ", ZoneId.systemDefault().getId());
+            mysql.start();
+            jdbcUrl = mysql.getJdbcUrl();
+            username = mysql.getUsername();
+            password = mysql.getPassword();
+        }
+
+        System.setProperty("spring.datasource.url", jdbcUrl);
+        System.setProperty("spring.datasource.username", username);
+        System.setProperty("spring.datasource.password", password);
+
+    public static final MockWebServer mockedServer1 = new MockWebServer();
+    public static final MockWebServer mockedServer2 = new MockWebServer();
+
+    static {
+        try {
+            mockedServer1.start();
+            mockedServer2.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static ObjectMapper objectMapper = new ObjectMapper()
+            .findAndRegisterModules()
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+    @Autowired
+    MockMvc mockMvc;
+
+
+    @Autowired
+    protected LoanRepository loanRepository;
+
+
+    @Autowired
+    PaymentRepository paymentRepository;
+
+    @AfterEach
+    void afterEachTest() {
+        dropContent();
+    }
+
+    @BeforeEach
+    void beforeEachTest() {
+        mockedServer1.setDispatcher(new QueueDispatcher());
+        mockedServer2.setDispatcher(new QueueDispatcher());
+        dropContent();
+    }
+
+    void dropContent() {
+        paymentRepository.deleteAll();
+        loanRepository.deleteAll();
+    }
+
+    @BeforeAll
+    static void startServer() {
+        System.setProperty("services.data-service.rootUrl", "http://localhost:" + mockedServer1.getPort());
+        System.setProperty("services.payment-schedule.rootUrl", "http://localhost:" + mockedServer2.getPort());
+        System.setProperty("services.payment-schedule.path", "");
+
+        System.setProperty("services.loan-products-service.rootUrl", "http://localhost:8080");
+        System.setProperty("services.loan-products-service.path", "");
+    }
+
+
+
+    protected void dataServiceBackendEnqueue(String resource) {
+        mockedServer1.enqueue(new MockResponse()
+                .setBody(loadJsonText(resource))
+                .setResponseCode(200)
+                .addHeader("Content-Type", "application/json")
+        );
+    }
+
+    protected void paymentScheduleBackendEnqueue(String resource) {
+        mockedServer2.enqueue(new MockResponse()
+                .setBody(loadJsonText(resource))
+                .setResponseCode(200)
+                .addHeader("Content-Type", "application/json")
+        );
+    }
+
+
+    protected void postLoansSuccess(String resource, LocalDate creationDate, ResultHandler resultHandler) {
+        try {
+            this.mockMvc.perform(
+                            MockMvcRequestBuilders.post("/v1/loans")
+                                    .header("x-tenant-id", "leumi-tenant")
+                                    .header("x-vbo-id", "5555")
+                                    .header("x-message-id", UUID.randomUUID().toString())
+                                    .header("x-current-date", creationDate)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(loadJsonText(resource))
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isCreated())
+                    .andDo(resultHandler);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail("postLoansSuccess failed because " + e.getMessage());
+        }
+    }
+
+    void cancelLoansSuccessWithBody(String body, ResultHandler resultHandler) {
+        try {
+            this.mockMvc.perform(
+                            MockMvcRequestBuilders.patch("/v1/loans/cancel")
+                                    .header("x-tenant-id", "leumi-tenant")
+                                    .header("x-vbo-id", "5555")
+                                    .header("x-message-id", UUID.randomUUID().toString())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(body)
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andDo(resultHandler);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail("cancelLoansSuccess failed because " + e.getMessage());
+        }
+    }
+
+    void getLoanSuccess(Long loanId, ResultHandler resultHandler) {
+        try {
+            this.mockMvc.perform(
+                            MockMvcRequestBuilders.get("/v1/loans?loanId={id}", loanId)
+                                    .header("x-tenant-id", "leumi-tenant")
+                                    .header("x-vbo-id", "5555")
+                                    .header("x-message-id", UUID.randomUUID().toString())
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andDo(resultHandler);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail("getLoanSuccess failed because " + e.getMessage());
+        }
+    }
+
+    protected void doPartialEarlyRepayment(String resource, LocalDate creationDate, ResultHandler resultHandler, Long id) {
+        try {
+            this.mockMvc.perform(
+                            MockMvcRequestBuilders.post("/v1/loans/" + id + "/partial-early-repayment")
+                                    .header("x-tenant-id", "leumi-tenant")
+                                    .header("x-vbo-id", "vbo1")
+                                    .header("x-message-id", UUID.randomUUID().toString())
+                                    .header("x-current-date", creationDate)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(loadJsonText(resource))
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andDo(resultHandler);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail("doPartialEarlyRepayment failed because " + e.getMessage());
+        }
+    }
+
+    protected void doFreeze(String resource, LocalDate creationDate, ResultHandler resultHandler, Long id) {
+        try {
+            this.mockMvc.perform(
+                            MockMvcRequestBuilders.post("/v1/loans/" + id + "/freeze")
+                                    .header("x-tenant-id", "leumi-tenant")
+                                    .header("x-vbo-id", "vbo1")
+                                    .header("x-message-id", UUID.randomUUID().toString())
+                                    .header("x-current-date", creationDate)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(loadJsonText(resource))
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andDo(resultHandler);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail("doFreeze failed because " + e.getMessage());
+        }
+    }
+
+    protected String loadJsonText(String res) {
+        ClassLoader classLoader = LoanApplicationIntegration.class.getClassLoader();
+        InputStream inputStream = classLoader.getResourceAsStream(res);
+
+        try {
+            return IOUtils.toString(inputStream);
+        } catch (IOException e) {
+
+            Assert.fail("Failed to load required resource file " + res);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+}
